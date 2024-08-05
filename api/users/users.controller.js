@@ -3,6 +3,7 @@ const UnauthorizedError = require("../../errors/unauthorized");
 const jwt = require("jsonwebtoken");
 const config = require("../../config");
 const usersService = require("./users.service");
+const User = require('./users.model');
 
 class UsersController {
   async getAll(req, res, next) {
@@ -25,16 +26,18 @@ class UsersController {
       next(err);
     }
   }
+
   async create(req, res, next) {
     try {
-      const user = await usersService.create(req.body);
-      user.password = undefined;
-      req.io.emit("user:create", user);
+      const {name, email, password} = req.body;
+      const user = new User({name, email, password});
+      await user.save();
       res.status(201).json(user);
     } catch (err) {
-      next(err);
+      next(err); // Pass the error to the error handler middleware
     }
   }
+
   async update(req, res, next) {
     try {
       const id = req.params.id;

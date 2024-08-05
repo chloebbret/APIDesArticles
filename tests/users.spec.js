@@ -23,12 +23,17 @@ describe("tester API users", () => {
     email: "test@test.net",
     password: "azertyuiop",
   };
+  const MOCK_DATA_UPDATED = {
+    name: "updated",
+    email: "updated@test.net",
+  };
 
   beforeEach(() => {
     token = jwt.sign({ userId: USER_ID }, config.secretJwtToken);
-    // mongoose.Query.prototype.find = jest.fn().mockResolvedValue(MOCK_DATA);
     mockingoose(User).toReturn(MOCK_DATA, "find");
     mockingoose(User).toReturn(MOCK_DATA_CREATED, "save");
+    mockingoose(User).toReturn(MOCK_DATA_UPDATED, "findOneAndUpdate");
+    mockingoose(User).toReturn({ _id: USER_ID }, "findByIdAndDelete");
   });
 
   test("[Users] Get All", async () => {
@@ -46,6 +51,23 @@ describe("tester API users", () => {
       .set("x-access-token", token);
     expect(res.status).toBe(201);
     expect(res.body.name).toBe(MOCK_DATA_CREATED.name);
+  });
+
+
+  test("[Users] Update User", async () => {
+    const res = await request(app)
+      .put(`/api/users/${USER_ID}`)
+      .send(MOCK_DATA_UPDATED)
+      .set("x-access-token", token);
+    expect(res.status).toBe(200);
+    expect(res.body.name).toBe(MOCK_DATA_UPDATED.name);
+  });
+
+  test("[Users] Delete User", async () => {
+    const res = await request(app)
+      .delete(`/api/users/${USER_ID}`)
+      .set("x-access-token", token);
+    expect(res.status).toBe(204);
   });
 
   test("Est-ce userService.getAll", async () => {
