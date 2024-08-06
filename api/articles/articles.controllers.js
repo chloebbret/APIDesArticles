@@ -1,93 +1,78 @@
-const articlesService = require('./articles.services');
-const UnauthorizedError = require("../../errors/unauthorized");
 const Article = require("./articles.schema");
 
-const createArticle = async (req, res, next) => {
+exports.createArticle = async (req, res, next) => {
   try {
-    const { title, content } = req.body;
-    const user = req.user;
-    if (!user) {
-      throw new UnauthorizedError("Vous n'êtes pas connecté");
-    }
-
-    const newArticle = new Article({
-      title,
-      content,
-      user: user._id
+    const article = new Article({
+      ...req.body,
+      user: req.user.userId
     });
-
-    const savedArticle = await newArticle.save();
-    res.status(201).json(savedArticle);
-
-  } catch (err) {
-    next(err);
+    await article.save();
+    res.status(201).json(article);
+  } catch (error) {
+    console.error("Error creating article:", error);
+    next(error);
   }
 };
 
-async function updateArticle(req, res, next) {
+exports.updateArticle = async (req, res, next) => {
   try {
-    const articleId = req.params.id;
-    const updatedData = req.body;
-    const user = req.user;
-
-    if (user.role !== 'admin') {
-      throw new UnauthorizedError("Aucune authorisation de mettre à jour l'article");
-    }
-
-    const article = await Article.findByIdAndUpdate(articleId, updatedData, { new: true });
-
+    const article = await Article.findById(req.params.id);
     if (!article) {
-      return res.status(404).json({ message: 'Article non trouvé' });
+      return res.status(404).json({ message: "Article not found" });
     }
-    res.json(article);
+    if (article.user.toString() !== req.user.userId && req.user.role !== "admin") {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+    Object.assign(article, req.body);
+    await article.save();
+    res.status(200).json(article);
   } catch (error) {
     next(error);
   }
-}
+};
 
-async function deleteArticle (req, res, next) {
+exports.deleteArticle = async (req, res, next) => {
   try {
-    const articleId = req.params.id;
-    const user = req.user;
-
-    if (user.role !== 'admin') {
-      throw new UnauthorizedError("Aucune authorisation pour supprimer l'article");
-    }
-
-    const article = await Article.findByIdAndDelete(articleId);
-
+    const article = await Article.findById(req.params.id);
     if (!article) {
-      return res.status(404).json({ message: 'Article non trouvé' });
+      return res.status(404).json({ message: "Article not found" });
     }
-    res.json({ message: 'Suppression validée' });
+    if (article.user.toString() !== req.user.userId && req.user.role !== "admin") {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+    await Article.findByIdAndDelete(req.params.id);
+    res.status(204).send();
   } catch (error) {
     next(error);
   }
-}
+};
 
-const getAllA = async (req, res, next) => {
+exports.getAllA = async (req, res, next) => {
   try {
-    const articles = await Article.find().populate('user', '-password');
-    res.json(articles);
-  } catch (err) {
-    next(err);
+    const articles = await Article.find().populate("user", "name email");
+    res.status(200).json(articles);
+  } catch (error) {
+    next(error);
   }
 };
 
-const getAByUser = async (req, res, next) => {
+exports.getAById = async (req, res, next) => {
   try {
-    const userId = req.params.userId;
-    const articles = await articlesService.getArticlesByUser(userId);
-    res.json(articles);
-  } catch (err) {
-    next(err);
+    const article = await Article.findById(req.params.id).populate("user", "name email");
+    if (!article) {
+      return res.status(404).json({ message: "Article not found" });
+    }
+    res.status(200).json(article);
+  } catch (error) {
+    next(error);
   }
 };
 
-module.exports = {
-  createArticle,
-  updateArticle,
-  deleteArticle,
-  getAByUser,
-  getAllA
+exports.getAByUser = async (req, res, next) => {
+  try {
+    const articles = await Article.find({ user: req.params.userId }).populate("user", "name email");
+    res.status(200).json(articles);
+  } catch (error) {
+    next(error);
+  }
 };
