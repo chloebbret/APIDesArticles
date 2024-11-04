@@ -25,7 +25,8 @@ app.use(cors());
 app.use(express.json());
 
 app.use("/api/users", authMiddleware, userRouter);
-app.use("/api/articles", authMiddleware, articleRouter);
+app.use("/api/articles", articleRouter); // Articles sans auth globale
+
 app.post("/login", usersController.login);
 
 app.use("/", express.static("public"));

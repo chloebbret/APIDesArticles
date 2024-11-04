@@ -4,12 +4,12 @@ exports.createArticle = async (req, res, next) => {
   try {
     const article = new Article({
       ...req.body,
-      user: req.user.userId
+      user: req.user._id,
     });
     await article.save();
     res.status(201).json(article);
   } catch (error) {
-    console.error("Error creating article:", error);
+    console.error("Il y a une erreur lors de la création d'un article:", error);
     next(error);
   }
 };
@@ -18,10 +18,10 @@ exports.updateArticle = async (req, res, next) => {
   try {
     const article = await Article.findById(req.params.id);
     if (!article) {
-      return res.status(404).json({ message: "Article not found" });
+      return res.status(404).json({ message: "Impossible de trouvé l'article" });
     }
-    if (article.user.toString() !== req.user.userId && req.user.role !== "admin") {
-      return res.status(403).json({ message: "Unauthorized" });
+    if (article.user.toString() !== req.user._id && req.user.role !== "admin") {
+      return res.status(403).json({ message: "Non autorisé" });
     }
     Object.assign(article, req.body);
     await article.save();
@@ -35,10 +35,10 @@ exports.deleteArticle = async (req, res, next) => {
   try {
     const article = await Article.findById(req.params.id);
     if (!article) {
-      return res.status(404).json({ message: "Article not found" });
+      return res.status(404).json({ message: "Impossible de trouvé l'article" });
     }
-    if (article.user.toString() !== req.user.userId && req.user.role !== "admin") {
-      return res.status(403).json({ message: "Unauthorized" });
+    if (article.user.toString() !== req.user._id && req.user.role !== "admin") {
+      return res.status(403).json({ message: "Non autorisé" });
     }
     await Article.findByIdAndDelete(req.params.id);
     res.status(204).send();
@@ -60,7 +60,7 @@ exports.getAById = async (req, res, next) => {
   try {
     const article = await Article.findById(req.params.id).populate("user", "name email");
     if (!article) {
-      return res.status(404).json({ message: "Article not found" });
+      return res.status(404).json({ message: "Impossible de trouvé l'article" });
     }
     res.status(200).json(article);
   } catch (error) {

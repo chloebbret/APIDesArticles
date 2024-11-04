@@ -8,6 +8,7 @@ router.get("/:id", usersController.getById);
 router.post("/", usersController.create);
 router.put("/:id", usersController.update);
 router.delete("/:id", usersController.delete);
+router.get("/:userId/articles", usersController.getUserArticles);
 
 router.get("/", authMiddleware, usersController.getAll);
 router.post("/", authMiddleware, usersController.create);

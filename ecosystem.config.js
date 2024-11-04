@@ -8,6 +8,7 @@ module.exports = {
       watch: true,
       log_date_format: "YYYY-MM-DD HH:mm Z",
       error_file: "./logs/err.log",
+      out_file: "./logs/out.log",
       max_memory_restart: "200M",
       env_production: {
         NODE_ENV: "production",

@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 const config = require("../../config");
 const usersService = require("./users.service");
 const User = require('./users.model');
+const Article = require('../articles/articles.schema');
 
 class UsersController {
   async getAll(req, res, next) {
@@ -27,17 +28,36 @@ class UsersController {
     }
   }
 
+  async getUserArticles(req, res, next) {
+    try {
+      const userId = req.params.userId;
+
+      const articles = await Article.find({ user: userId }).populate("user", "-password");
+
+      if (!articles.length) {
+        throw new NotFoundError("Aucun article trouvé pour cet user.");
+      }
+
+      res.json(articles);
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async create(req, res, next) {
     try {
       const {name, email, password} = req.body;
+
+      console.log("Données reçues pour la création d'utilisateur:", req.body);
+
       const user = new User({name, email, password});
       await user.save();
       res.status(201).json(user);
     } catch (err) {
-      next(err); // Pass the error to the error handler middleware
+      console.error("Erreur lors de la création de l'utilisateur:", err.message);
+      next(err);
     }
   }
-
   async update(req, res, next) {
     try {
       const id = req.params.id;
